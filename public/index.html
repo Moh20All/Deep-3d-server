@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Serving Platform</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="/libs/three/build/three.min.js"></script>
+</head>
+<body>
+    <h1>3D Model Serving Platform</h1>
+    <p>Secure 3D model serving with JWT authentication</p>
+    
+    <div class="server-info">
+        <h2>Platform Features</h2>
+        <ul>
+            <li>🔐 JWT-based authentication for teachers and admins</li>
+            <li>📊 RESTful API for model management</li>
+            <li>🎮 Three.js 3D model viewer</li>
+            <li>🔗 Secure shareable links for students</li>
+            <li>📁 MongoDB database for model storage</li>
+        </ul>
+    </div>
+
+    <div class="api-links">
+        <h2>API Endpoints</h2>
+        <h3>Teacher Routes (JWT Required)</h3>
+        <p><code>GET /api/models</code> - List all models</p>
+        <p><code>GET /api/models/:id</code> - Get specific model</p>
+        <p><code>POST /api/models/:id/share</code> - Generate shareable link</p>
+        
+        <h3>Admin Routes (API Key Required)</h3>
+        <p><code>GET /admin/info</code> - Get admin API key info</p>
+        <p><code>POST /admin/models</code> - Upload new model</p>
+        <p><code>PUT /admin/models/:id</code> - Update model</p>
+        <p><code>DELETE /admin/models/:id</code> - Delete model</p>
+        <p><em>Use X-API-Key header for authentication</em></p>
+        
+        <h3>Student Routes (Public with token)</h3>
+        <p><code>GET /view/:id?token=...</code> - View 3D model</p>
+        
+        <h3>Public Routes</h3>
+        <p><code>GET /status</code> - Server status</p>
+    </div>
+
+    <div class="demo-section">
+        <h2>Demo: Test API Endpoints</h2>
+        <div class="demo-buttons">
+            <button onclick="testStatus()">Test Server Status</button>
+            <button onclick="testAdminInfo()">Test Admin Info</button>
+            <button onclick="showInstructions()">Show Usage Instructions</button>
+        </div>
+        <div id="demo-results"></div>
+    </div>
+
+    <div id="three-container">
+        <h2>Live 3D Preview</h2>
+        <canvas id="three-canvas"></canvas>
+    </div>
+
+    <script>
+        // Basic Three.js scene
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 400/300, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('three-canvas') });
+        
+        renderer.setSize(400, 300);
+        renderer.setClearColor(0xf0f0f0);
+        
+        const geometry = new THREE.BoxGeometry();
+        const material = new THREE.MeshPhongMaterial({ color: 0x007bff });
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
+        
+        // Add lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 5, 5);
+        scene.add(directionalLight);
+        
+        camera.position.z = 5;
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            cube.rotation.x += 0.01;
+            cube.rotation.y += 0.01;
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Demo functions
+        async function testStatus() {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                document.getElementById('demo-results').innerHTML = `
+                    <h3>Server Status Response:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('demo-results').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testAdminInfo() {
+            try {
+                const response = await fetch('/admin/info');
+                const data = await response.json();
+                document.getElementById('demo-results').innerHTML = `
+                    <h3>Admin API Info:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('demo-results').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        function showInstructions() {
+            document.getElementById('demo-results').innerHTML = `
+                <h3>Usage Instructions:</h3>
+                <ol>
+                    <li><strong>For Teachers:</strong> Use JWT tokens from MadrassaPlay to access /api/* endpoints</li>
+                    <li><strong>For Admins:</strong> Use API key in X-API-Key header for /admin/* endpoints</li>
+                    <li><strong>For Students:</strong> Use shareable links generated by teachers (format: /view/:id?token=...)</li>
+                    <li><strong>JWT Secret:</strong> Both services must share the same JWT_SHARED_SECRET</li>
+                    <li><strong>Admin API Key:</strong> Set ADMIN_API_KEY environment variable</li>
+                </ol>
+            `;
+        }
+    </script>
+</body>
+</html>
+
